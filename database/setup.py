@@ -1,38 +1,34 @@
-import pytest
-import sqlite3
 
-@pytest.fixture(scope="function")
-def setup_database():
-    # Set up the database schema and test data before each test
-    conn = sqlite3.connect('test.db')
+from .connection import get_db_connection
+
+def create_tables():
+    conn = get_db_connection()
     cursor = conn.cursor()
-
-    # Create tables and insert test data
+    
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS articles (
+        CREATE TABLE IF NOT EXISTS authors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            content TEXT,
-            author_id INTEGER,
-            magazine_id INTEGER
+            name TEXT NOT NULL
         )
     ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS magazines (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            category TEXT
+            name TEXT NOT NULL,
+            category TEXT NOT NULL
         )
     ''')
-    cursor.execute("INSERT INTO magazines (name, category) VALUES ('Tech Weekly', 'Technology')")
-    cursor.execute("INSERT INTO articles (title, content, author_id, magazine_id) VALUES ('The Rise of AI', 'Content about AI', 1, 1)")
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS articles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            author_id INTEGER,
+            magazine_id INTEGER,
+            FOREIGN KEY (author_id) REFERENCES authors (id),
+            FOREIGN KEY (magazine_id) REFERENCES magazines (id)
+        )
+    ''')
 
-    conn.commit()
-
-    yield conn  # Provide the connection to the tests
-
-    # Clean up the database after the test
-    cursor.execute("DELETE FROM articles")
-    cursor.execute("DELETE FROM magazines")
     conn.commit()
     conn.close()
